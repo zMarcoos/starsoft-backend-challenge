@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: starsoft_postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: securepassword123
+      POSTGRES_DB: ticket_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - starsoft_net
+
+  redis:
+    image: redis:7-alpine
+    container_name: starsoft_redis
+    ports:
+      - '6379:6379'
+    networks:
+      - starsoft_net
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: starsoft_rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password123
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    networks:
+      - starsoft_net
+
+networks:
+  starsoft_net:
+    driver: bridge
+
+volumes:
+  postgres_data:

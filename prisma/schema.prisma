@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Movie {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  duration    Int
+  createdAt   DateTime  @default(now())
+
+  sessions    Session[]
+
+  @@map("movies")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  movieId   String
+  movie     Movie    @relation(fields: [movieId], references: [id])
+  price     Decimal  @db.Decimal(10, 2)
+  startsAt  DateTime
+  createdAt DateTime @default(now())
+
+  seats     Seat[]
+
+  @@map("sessions")
+}
+
+enum SeatStatus {
+  AVAILABLE
+  LOCKED
+  SOLD
+}
+
+model Seat {
+  id        String     @id @default(uuid())
+  sessionId String
+  session   Session    @relation(fields: [sessionId], references: [id])
+  row       String
+  number    Int
+  status    SeatStatus @default(AVAILABLE)
+
+  tickets   Ticket[]
+
+  @@unique([sessionId, row, number])
+  @@map("seats")
+}
+
+enum TicketStatus {
+  PENDING
+  PAID
+  CANCELED
+}
+
+model Ticket {
+  id        String       @id @default(uuid())
+  seatId    String
+  seat      Seat         @relation(fields: [seatId], references: [id])
+  userId    String
+  status    TicketStatus @default(PENDING)
+  price     Decimal      @db.Decimal(10, 2)
+  createdAt DateTime     @default(now())
+  expiresAt DateTime
+
+  @@map("tickets")
+}
