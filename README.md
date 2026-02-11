@@ -1,98 +1,118 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# 🎬 StarSoft Backend Challenge - Sistema de Reservas
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-## Description
+## 📌 Visão Geral
+Esta é uma API RESTful robusta desenvolvida para gerenciar a reserva e venda de assentos de cinema. O grande desafio deste domínio não é o CRUD em si, mas sim a **concorrência**. 
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+O sistema foi arquitetado para lidar com cenários de alto tráfego, garantindo que o temido problema de *double-booking* (venda do mesmo ingresso para duas pessoas no mesmo milissegundo) seja impossível de acontecer, além de gerenciar autonomamente o ciclo de vida temporário (30 segundos) de ingressos não pagos através de processamento assíncrono.
 
-## Project setup
+---
 
+## 🛠️ Tecnologias Escolhidas
+
+* **Node.js + NestJS:** Framework modular que facilita a Injeção de Dependências e a criação de uma arquitetura limpa (híbrida entre REST e Microserviços).
+* **PostgreSQL + Prisma ORM (Pg Adapter):** Banco de dados relacional (ACID) para garantir a integridade absoluta das transações financeiras e estado dos assentos. O uso do adapter nativo `pg` previne gargalos de conexão.
+* **Redis (ioredis):** Escolhido especificamente como gerenciador de *Distributed Locks*. Devido à sua natureza *single-threaded* e operações em memória atômicas, é a barreira perfeita para barrar requisições concorrentes em microssegundos antes de tocarem no banco de dados.
+* **RabbitMQ:** Sistema de mensageria adotado para garantir a expiração das reservas. Em vez de usar `setTimeout` (que é volátil e se perde se a aplicação reiniciar), usamos filas duráveis com a técnica de **Dead Letter Queue (DLQ)**.
+
+---
+
+## 🚀 Como Executar
+
+### Pré-requisitos
+* Docker e Docker Compose instalados.
+* Node.js (v20+) e NPM/PNPM instalados (para rodar a API localmente durante o desenvolvimento).
+
+### 1. Configurando o Ambiente
+Clone o repositório e crie o seu arquivo de variáveis de ambiente a partir do exemplo fornecido:
 ```bash
-$ pnpm install
+cp .env.example .env
 ```
 
-## Compile and run the project
-
+### 2. Subindo a infraestrutura
+Inicie o PostgreSQL, Redis e RabbitMQ via Docker:
 ```bash
-# development
-$ pnpm run start
-
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+docker-compose up -d
 ```
 
-## Run tests
-
+### 3. Instalando dependências e preparando o banco
 ```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
+npm install
+npx prisma migrate dev
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
+### 4. Populando dados iniciais (Seed)
+Para criar os filmes, sessões e 50 assentos disponíveis, rode:
 ```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+npx prisma db seed
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 5. Iniciando a aplicação
+Para criar os filmes, sessões e 50 assentos disponíveis, rode:
+```bash
+npm run start:dev
+```
 
-## Resources
+A API estará disponível em `http://localhost:3000/api/v1`.
 
-Check out a few resources that may come in handy when working with NestJS:
+### 6. Executando os testes
+Para rodar a suíte de testes (que valida especificamente a lógica de controle de concorrência com Redis):
+```bash
+npm run test
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+---
 
-## Support
+## 🧠 Estratégias Implementadas
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+### Como resolveu Race Conditions?
+Implementamos um **Distributed Lock Atômico no Redis**. Quando o usuário tenta reservar um assento, a API envia um comando `SET key value NX EX 30`. 
+O parâmetro `NX` (Not eXists) garante que apenas a primeira requisição consiga gravar a chave. Requisições concorrentes (mesmo que no exato mesmo milissegundo) recebem `null` do Redis e a API retorna imediatamente um erro `409 Conflict`, barrando a *Race Condition* sem onerar o banco de dados.
 
-## Stay in touch
+### Como garantiu coordenação entre múltiplas instâncias?
+Tanto o cache (Redis) quanto a mensageria (RabbitMQ) e o banco (Postgres) estão externalizados. Se subirmos 10 réplicas dessa API, todas consultarão o mesmo nó do Redis para checar o Lock, e todas poderão atuar como *Consumers* (Padrão Competing Consumers) na fila do RabbitMQ. O estado não fica preso na memória RAM do Node.js.
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### Como preveniu Deadlocks?
+1. **No Redis:** O parâmetro `EX 30` acopla um Time-To-Live (TTL) ao Lock. Se o servidor Node "morrer" no meio do processo antes de liberar a trava, o Redis a expira automaticamente em 30 segundos, impedindo o "assento fantasma".
+2. **No Postgres:** As transações (`$transaction`) são mantidas extremamente curtas e simples, manipulando apenas as tabelas `Ticket` e `Seat` simultaneamente para evitar concorrência de recursos no disco. Operações de update condicional (`where: { status: 'PENDING' }`) delegam a validação final para o motor transacional do banco.
 
-## License
+---
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## 📡 Endpoints da API
+
+**1. Listar Assentos Disponíveis**
+* `GET /reservations`
+* *Retorna as sessões, filmes e o array de assentos ordenados.*
+
+**2. Criar Reserva (Bloqueio de 30s)**
+* `POST /reservations`
+* *Body:* `{ "userId": "uuid", "seatId": "uuid" }`
+* *Retorna:* Dados da reserva temporária e `ticketId`.
+
+**3. Consultar Status do Ingresso**
+* `GET /reservations/ticket/:id`
+* *Retorna:* Status atual do ingresso (`PENDING`, `PAID` ou `CANCELED`).
+
+**4. Pagar Ingresso**
+* `PATCH /reservations/ticket/:id/pay`
+* *Retorna:* Confirmação de sucesso. Muda o status do Ticket para `PAID` e do Assento para `SOLD`.
+
+---
+
+## ⚖️ Decisões Técnicas
+* **O Problema da Escrita Dupla (Dual-Write Problem):** Disparamos o evento para o RabbitMQ *estritamente após* o commit da transação do Prisma. Isso garante que não teremos mensagens órfãs na fila caso o banco de dados falhe.
+* **Dead Letter Queue (DLQ) vs Cronjob/setTimeout:** A responsabilidade de contar os 30 segundos foi delegada ao RabbitMQ (usando `messageTtl`). Se a reserva não for paga, a mensagem "morre" e cai na fila principal, onde nosso *Consumer* a processa e cancela a reserva de forma autônoma e resiliente à queda do servidor Node.js.
+
+---
+
+## ⚠️ Limitações Conhecidas
+* **Ausência do Padrão Outbox:** Embora emitamos a mensagem após a transação do banco, existe uma pequena janela de falha (se a rede do RabbitMQ cair no milissegundo exato após o commit do Postgres). O ideal seria salvar o evento no próprio banco de dados na mesma transação e ter um *Relay* lendo isso.
+* **Testes End-to-End (E2E):** O foco principal foi criar testes unitários/funcionais críticos para o Lock de Concorrência. A cobertura E2E completa foi omitida por questões de escopo de tempo.
+
+---
+
+## 🔮 Melhorias Futuras
+* **Implementar Transactional Outbox Pattern** para garantia de 100% de consistência eventual entre o Postgres e o RabbitMQ.
+* **Adicionar Autenticação (JWT) e Autorização**, extraindo o `userId` do token da requisição em vez do corpo do payload.
+* **Implementar CI/CD** (GitHub Actions) com pipeline de verificação de testes e lint antes do merge na `main`.
